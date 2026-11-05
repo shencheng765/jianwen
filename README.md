@@ -8,13 +8,13 @@
 
 ## 下载与安装
 
-到 [Releases](https://github.com/shencheng765/jianwen/releases/latest) 下载 **1.5.7**：
+到 [Releases](https://github.com/shencheng765/jianwen/releases/latest) 下载 **1.5.8**：
 
 | 文件 | 用途 |
 | --- | --- |
-| Jianwen-1.5.7-Setup-x64.exe | 安装版，推荐日常使用 |
-| Jianwen-1.5.7-Windows-x64.exe | 免安装版，放入可写文件夹后运行 |
-| Jianwen-1.5.7-Source.zip | 与本次发布对应的源码快照 |
+| Jianwen-1.5.8-Setup-x64.exe | 安装版，推荐日常使用 |
+| Jianwen-1.5.8-Windows-x64.exe | 免安装版，放入可写文件夹后运行 |
+| Jianwen-1.5.8-Source.zip | 与本次发布对应的源码快照 |
 | SHA256SUMS.txt | 下载文件的 SHA-256 校验值 |
 
 面向 Windows x64，建议 Windows 10 / 11。运行需要 **.NET Framework 4.8** 与 **Microsoft Edge WebView2 Runtime**；EXE 不包含独立 Chromium。安装包约 **1.73 MiB**，缺少运行环境时需先安装相应运行库。
@@ -58,13 +58,13 @@ npm ci --ignore-scripts --no-audit --no-fund
 npm run package
 ~~~
 
-生成 release/Jianwen-1.5.7-Windows-x64.exe。再生成安装版：
+生成 release/Jianwen-1.5.8-Windows-x64.exe。再生成安装版：
 
 ~~~powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File native/installer.ps1
 ~~~
 
-该脚本通过 electron-builder 工具恢复 NSIS 编译器，需要访问相关下载站点。生成 release/Jianwen-1.5.7-Setup-x64.exe。
+该脚本通过 electron-builder 工具恢复 NSIS 编译器，需要访问相关下载站点。生成 release/Jianwen-1.5.8-Setup-x64.exe。
 
 npm run package:installer 会依次构建两种 EXE。原生版本是本次发布的主版本；electron/ 保留另一种宿主实现，首次使用 Electron 开发模式前需运行 node node_modules/electron/install.js 下载 Electron。
 
@@ -76,6 +76,17 @@ native/                 WinForms + WebView2 宿主、文件与安装逻辑
 electron/               Electron 宿主实现
 assets/                 应用图标
 docs/                   使用指南与使用图
+~~~
+
+## 1.5.8
+
+修复含少量空字节的日志被误判成二进制、无法打开的问题。UTF-8 和 GB18030 均无法严格解码的文本改用“单字节（无损）”读取，保留原始字节；非英文字符可能显示异常。无法在该编码中保存的新字符会报错，可另存为 UTF-8。二进制格式和控制字节密集的文件仍会拒绝打开。
+
+解码回归检查：
+
+~~~powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/log-decode.ps1
+node tests/log-decode.cjs
 ~~~
 
 ## 1.5.7

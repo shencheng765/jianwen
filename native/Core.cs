@@ -29,19 +29,45 @@ namespace Jianwen {
         public static string Error(Exception error) { return Clip(Regex.Replace(error.Message, @"sk-[\w.\-]+", "[密钥已隐藏]"), 400); }
         public static string Digest(byte[] bytes) { using (var sha = SHA256.Create()) return String.Concat(sha.ComputeHash(bytes).Select(b => b.ToString("x2"))); }
         public static string FileKey(string path) { return Path.GetFullPath(path).ToLowerInvariant(); }
+        public static bool LooksBinary(byte[] bytes) {
+            // Logs may contain sparse NULs and terminal control bytes. A single
+            // control byte is not evidence that the whole document is binary.
+            if (bytes.Length == 0) return false;
+            if (bytes.Length >= 4 && (
+                (bytes[0] == 0x7f && bytes[1] == 69 && bytes[2] == 76 && bytes[3] == 70) ||
+                (bytes[0] == 0x89 && bytes[1] == 80 && bytes[2] == 78 && bytes[3] == 71) ||
+                (bytes[0] == 80 && bytes[1] == 75 && bytes[2] == 3 && bytes[3] == 4) ||
+                (bytes[0] == 0xff && bytes[1] == 0xd8 && bytes[2] == 0xff) ||
+                (bytes[0] == 0x1f && bytes[1] == 0x8b))) return true;
+            int controls = 0;
+            foreach (byte value in bytes)
+                if ((value < 32 && value != 8 && value != 9 && value != 10 &&
+                    value != 12 && value != 13 && value != 27) || value == 127) controls++;
+            return (long)controls * 10 > bytes.Length;
+        }
         public static Dictionary<string, object> Decode(byte[] bytes) {
             string encoding = "utf8"; bool bom = false; int skip = 0;
             bool le = bytes.Length >= 2 && bytes[0] == 255 && bytes[1] == 254;
             bool be = bytes.Length >= 2 && bytes[0] == 254 && bytes[1] == 255;
-            if (bytes.Contains((byte)0) && !le && !be) throw new Exception("这是二进制文件，简文只打开文本文件。");
+            if (!le && !be && LooksBinary(bytes)) throw new Exception("这是二进制文件，简文只打开文本文件。");
             if (le || be) { encoding = le ? "utf16-le" : "utf16-be"; bom = true; skip = 2; }
             else if (bytes.Length >= 3 && bytes[0] == 239 && bytes[1] == 187 && bytes[2] == 191) { bom = true; skip = 3; }
             string text;
             try { text = GetEncoding(encoding).GetString(bytes, skip, bytes.Length - skip); }
             catch (DecoderFallbackException) {
                 if (encoding != "utf8") throw new Exception("文件中的文字编码不完整，请检查文件。");
-                encoding = "gb18030"; bom = false;
-                text = GetEncoding(encoding).GetString(bytes, skip, bytes.Length - skip);
+                encoding = "gb18030";
+                try {
+                    if (skip > 0) throw new DecoderFallbackException();
+                    text = GetEncoding(encoding).GetString(bytes, skip, bytes.Length - skip);
+                }
+                catch (DecoderFallbackException) {
+                    // ISO-8859-1 maps every byte reversibly, unlike replacement
+                    // decoding. Preserve even a malformed UTF-8 BOM as bytes.
+                    encoding = "latin1"; skip = 0;
+                    text = GetEncoding(encoding).GetString(bytes);
+                }
+                bom = false;
             }
             return Json.Obj("text", text, "encoding", encoding, "bom", bom);
         }
@@ -50,6 +76,7 @@ namespace Jianwen {
             if (encoding == "utf16-le") return new UnicodeEncoding(false, false, true);
             if (encoding == "utf16-be") return new UnicodeEncoding(true, false, true);
             if (encoding == "gb18030") return Encoding.GetEncoding(54936, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
+            if (encoding == "latin1") return Encoding.GetEncoding(28591, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
             throw new Exception("不支持的文本编码。");
         }
         public static byte[] Encode(string text, string encoding, bool bom) {

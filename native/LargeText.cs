@@ -58,14 +58,17 @@ namespace Jianwen {
                 var sample = Read(source, 0, (int)Math.Min(SegmentBytes + 4, length));
                 if (sample.Length >= 2 && sample[0] == 255 && sample[1] == 254) { EncodingName = "utf16-le"; skip = 2; return; }
                 if (sample.Length >= 2 && sample[0] == 254 && sample[1] == 255) { EncodingName = "utf16-be"; skip = 2; return; }
-                if (sample.Contains((byte)0)) throw new Exception("这是二进制文件，简文只打开文本文件。");
+                if (Core.LooksBinary(sample)) throw new Exception("这是二进制文件，简文只打开文本文件。");
                 skip = sample.Length >= 3 && sample[0] == 239 && sample[1] == 187 && sample[2] == 191 ? 3 : 0;
                 EncodingName = "utf8";
                 for (int trim = 0; trim < (length > sample.Length ? 4 : 1) && sample.Length - skip >= trim; trim++) {
                     try { Core.GetEncoding("utf8").GetString(sample, skip, sample.Length - skip - trim); return; } catch (DecoderFallbackException) { }
                 }
-                if (skip > 0) throw new Exception("UTF-8 文件编码无效。");
                 EncodingName = "gb18030";
+                for (int trim = 0; skip == 0 && trim < (length > sample.Length ? 4 : 1) && sample.Length >= trim; trim++) {
+                    try { Core.GetEncoding(EncodingName).GetString(sample, skip, sample.Length - skip - trim); skip = 0; return; } catch (DecoderFallbackException) { }
+                }
+                EncodingName = "latin1"; skip = 0;
             }
         }
         private long Boundary(FileStream source, int index) {
@@ -90,6 +93,10 @@ namespace Jianwen {
                         if (previous == 13 && value == 10) at += 2;
                     }
                 }
+            } else if (EncodingName == "latin1") {
+                // One character per byte; no multibyte boundary adjustment.
+                source.Position = at - 1;
+                if (source.ReadByte() == 13 && source.ReadByte() == 10) at++;
             } else {
                 // GB18030 has ambiguous random byte boundaries. Build only as
                 // much of its exact boundary index as the requested jump needs.
@@ -109,7 +116,7 @@ namespace Jianwen {
         private string Original(FileStream source, int index) {
             long start = Boundary(source, index), end = Boundary(source, index + 1);
             var bytes = Read(source, start, (int)(end - start));
-            if (!EncodingName.StartsWith("utf16") && bytes.Contains((byte)0)) throw new Exception("当前片段包含二进制数据，已停止读取。");
+            if (!EncodingName.StartsWith("utf16") && Core.LooksBinary(bytes)) throw new Exception("当前片段包含大量二进制数据，已停止读取。");
             try { return Core.GetEncoding(EncodingName).GetString(bytes); }
             catch (DecoderFallbackException) { throw new Exception("当前片段编码与自动识别结果不符，请切换大文件编码后重试。"); }
         }

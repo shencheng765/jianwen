@@ -52,7 +52,7 @@ export function mountInterface(icons){
  </nav>
  <main id="layout" class="ai-hidden">
   <section class="document-area"><div id="large-toolbar" hidden>
-    <div class="large-controls"><strong id="large-size"></strong><button id="large-prev" title="上一片段">‹</button><label>第 <input id="large-index" type="number" min="1" value="1" aria-label="片段序号"></label><span id="large-total"></span><button id="large-go">跳转</button><button id="large-next" title="下一片段">›</button><input id="large-range" type="range" min="1" value="1" aria-label="跳转到大文件片段"><select id="large-encoding" aria-label="大文件编码"><option value="utf8">UTF-8</option><option value="gb18030">GB18030</option><option value="utf16-le">UTF-16 LE</option><option value="utf16-be">UTF-16 BE</option></select></div>
+    <div class="large-controls"><strong id="large-size"></strong><button id="large-prev" title="上一片段">‹</button><label>第 <input id="large-index" type="number" min="1" value="1" aria-label="片段序号"></label><span id="large-total"></span><button id="large-go">跳转</button><button id="large-next" title="下一片段">›</button><input id="large-range" type="range" min="1" value="1" aria-label="跳转到大文件片段"><select id="large-encoding" aria-label="大文件编码"><option value="utf8">UTF-8</option><option value="gb18030">GB18030</option><option value="utf16-le">UTF-16 LE</option><option value="utf16-be">UTF-16 BE</option><option value="latin1">单字节（无损）</option></select></div>
     <div id="large-state" role="status"></div>
   </div><div id="editor-shell"><div id="editor"></div><div id="placeholder" hidden></div></div></section>
   <div id="ai-resizer" class="panel-resizer" role="separator" aria-label="调整 AI 侧栏宽度" aria-orientation="vertical" aria-valuemin="280" aria-valuemax="900" tabindex="0" title="拖动调整 AI 宽度；双击恢复默认"></div>

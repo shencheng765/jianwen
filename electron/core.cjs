@@ -1,8 +1,18 @@
 const crypto = require('node:crypto');
 const iconv = require('iconv-lite');
 
+function looksBinary(buffer) {
+  if (!buffer.length) return false;
+  if (buffer.length>=4&&[
+    [0x7f,69,76,70],[0x89,80,78,71],[80,75,3,4],[0xff,0xd8,0xff],[0x1f,0x8b]
+  ].some(prefix=>prefix.every((v,i)=>buffer[i]===v))) return true;
+  let controls=0;
+  for(const value of buffer)if((value<32&&![8,9,10,12,13,27].includes(value))||value===127)controls++;
+  return controls*10>buffer.length;
+}
+
 function decodeFile(buffer) {
-  if (buffer.includes(0) && !(buffer[0] === 0xff && buffer[1] === 0xfe) && !(buffer[0] === 0xfe && buffer[1] === 0xff)) {
+  if (looksBinary(buffer) && !(buffer[0] === 0xff && buffer[1] === 0xfe) && !(buffer[0] === 0xfe && buffer[1] === 0xff)) {
     throw new Error('这是二进制文件，简文只打开文本文件。');
   }
   if (buffer[0] === 0xff && buffer[1] === 0xfe) return {text: iconv.decode(buffer.subarray(2), 'utf16-le'), encoding:'utf16-le', bom:true};
@@ -10,7 +20,11 @@ function decodeFile(buffer) {
   const bom = buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf;
   const body = bom ? buffer.subarray(3) : buffer;
   try { return {text: new TextDecoder('utf-8', {fatal:true}).decode(body), encoding:'utf8', bom}; }
-  catch { return {text:iconv.decode(body, 'gb18030'), encoding:'gb18030', bom:false}; }
+  catch {
+    const text=iconv.decode(buffer,'gb18030');
+    if(!bom&&iconv.encode(text,'gb18030').equals(buffer))return {text,encoding:'gb18030',bom:false};
+    return {text:iconv.decode(buffer,'latin1'),encoding:'latin1',bom:false};
+  }
 }
 
 function encodeFile(text, encoding='utf8', bom=false) {

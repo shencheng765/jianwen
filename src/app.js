@@ -341,11 +341,11 @@ function updateStatus(){const d=current();if(!d)return;const pos=editor.getPosit
   $('count').textContent=d.model.getValueLength().toLocaleString()+(d.large?' 个字符（本段）':' 个字符');
   $('line-ending').textContent=d.model.getEOL()==='\r\n'?'Windows (CRLF)':'Unix (LF)';
   $('file-state').textContent=d.path?(dirty(d)?'尚未保存修改':'已保存'):'未保存';$('file-state').title=d.path||'新建文本';
-  $('encoding').textContent=({utf8:'UTF-8','utf16-le':'UTF-16 LE','utf16-be':'UTF-16 BE',gb18030:'GB18030'}[d.encoding]||d.encoding)+(d.bom?' BOM':'');
+  $('encoding').textContent=({utf8:'UTF-8','utf16-le':'UTF-16 LE','utf16-be':'UTF-16 BE',gb18030:'GB18030',latin1:'单字节（无损）'}[d.encoding]||d.encoding)+(d.bom?' BOM':'');
   $('placeholder').hidden=d.model.getValueLength()>0;
   document.title=(dirty(d)?'● ':'')+d.name+' — 简文';
 }
-async function openFiles(result){if(result.error)throw new Error(result.error);let target;for(const file of result.files||[]){const existing=docs.find(d=>d.path?.toLowerCase()===file.path.toLowerCase());target=existing?.id||createDoc(file).id;}if(target)activate(target);if(result.errors?.length)toast(result.errors.join('；'));}
+async function openFiles(result){if(result.error)throw new Error(result.error);let target;const warnings=[];for(const file of result.files||[]){const existing=docs.find(d=>d.path?.toLowerCase()===file.path.toLowerCase());target=existing?.id||createDoc(file).id;if(file.encoding==='latin1')warnings.push(file.name+'：含混合或损坏的编码字节，已按单字节无损读取；非英文可能显示异常。');}if(target)activate(target);if(result.errors?.length||warnings.length)toast([...(result.errors||[]),...warnings].join('；'));}
 async function saveDoc(d,saveAs=false){
   if(largeWorking){toast('大文件正在处理，稍等一下。');return false;}
   if(d.large)return largeOperation(d,async()=>{

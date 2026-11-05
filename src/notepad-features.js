@@ -30,7 +30,7 @@ export function installFeatures(ctx){
   for(const path of paths){const b=document.createElement('button');b.textContent=path;b.title=path;b.onclick=run(async()=>{await openFiles(await call(api.openPath(path)));dialog.close();});list.append(b);}dialog.showModal();
  });
  button('file-menu','reopen-tab','重新打开关闭的标签','Ctrl+Shift+T').onclick=run(async()=>{const d=history.pop();if(!d){toast('没有可恢复的已关闭标签。');return;}const existing=docs.find(x=>d.path&&x.path?.toLowerCase()===d.path.toLowerCase());if(existing)activate(existing.id);else if(d.large)await openFiles(await call(api.openPath(d.path)));else activate(createDoc(d).id);});
- button('file-menu','save-encoding','另存为并选择编码…').onclick=()=>{const d=current();if(!d)return;$('save-encoding-select').value=d.encoding+(d.bom&&d.encoding==='utf8'?'-bom':'');$('save-encoding-dialog').showModal();};
+ button('file-menu','save-encoding','另存为并选择编码…').onclick=()=>{const d=current();if(!d)return;$('save-encoding-select').value=d.encoding==='latin1'?'utf8':d.encoding+(d.bom&&d.encoding==='utf8'?'-bom':'');$('save-encoding-dialog').showModal();};
  button('file-menu','page-setup','页面设置…').onclick=run(async()=>{const settings=await call(api.printSettings());$('print-header').value=settings.header??'&f';$('print-footer').value=settings.footer??'第 &p 页';$('page-setup-dialog').showModal();});
  button('file-menu','exit-all','退出所有窗口').onclick=run(()=>call(api.exitAll()));
  button('view-menu','markdown-mode','Markdown 排版预览','Ctrl+Shift+M').onclick=run(async()=>{appearance().markdownMode=!appearance().markdownMode;ctx.applyAppearance();persist();await refreshMarkdown();});

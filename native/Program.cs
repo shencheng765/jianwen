@@ -17,12 +17,12 @@ using System.Windows.Forms;
 [assembly: AssemblyDescription("简文：轻量中文文本与命令编辑器")]
 [assembly: AssemblyProduct("简文")]
 [assembly: AssemblyCompany("Local")]
-[assembly: AssemblyVersion("1.5.7.0")]
-[assembly: AssemblyFileVersion("1.5.7.0")]
+[assembly: AssemblyVersion("1.5.8.0")]
+[assembly: AssemblyFileVersion("1.5.8.0")]
 
 namespace Jianwen {
     internal static class Program {
-        public const string Version = "1.5.7";
+        public const string Version = "1.5.8";
         public static bool IsTest { get { return Environment.GetEnvironmentVariable("JIANWEN_TEST") == "1"; } }
         public static string CachePath;
         public static string DataPath;
