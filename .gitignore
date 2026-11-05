@@ -1,0 +1,17 @@
+node_modules/
+dist/
+release/
+.upstream/
+.cache/
+test-results/
+artifacts/
+.local-data/
+*.local.json
+*.log
+/简文-*-说明与宣传.zip
+
+JianwenData/
+__pycache__/
+*.pyc
+.env
+.env.*
